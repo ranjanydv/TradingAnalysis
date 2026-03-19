@@ -6,17 +6,12 @@ namespace TradingAnalytics.Modules.Identity.Application.Dtos;
 public sealed class AuthResponseDto
 {
     /// <summary>
-    /// Gets or sets the JWT access token.
+    /// Gets or sets the issued tokens.
     /// </summary>
-    public string AccessToken { get; init; } = string.Empty;
+    public AuthTokensDto Tokens { get; init; } = new();
 
     /// <summary>
-    /// Gets or sets the optional raw session token.
+    /// Gets or sets the authenticated customer profile.
     /// </summary>
-    public string? SessionToken { get; init; }
-
-    /// <summary>
-    /// Gets or sets the authenticated customer.
-    /// </summary>
-    public CustomerProfileDto? Customer { get; init; }
+    public CustomerProfileDto Profile { get; init; } = new();
 }

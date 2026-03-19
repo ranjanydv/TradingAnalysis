@@ -8,17 +8,17 @@ public interface ISessionStore
     /// <summary>
     /// Stores session data.
     /// </summary>
-    Task SetAsync(string token, SessionData data, TimeSpan ttl, CancellationToken ct = default);
+    Task SetAsync(Guid sessionId, SessionData data, TimeSpan ttl, CancellationToken ct = default);
 
     /// <summary>
     /// Gets session data by token.
     /// </summary>
-    Task<SessionData?> GetAsync(string token, CancellationToken ct = default);
+    Task<SessionData?> GetAsync(Guid sessionId, CancellationToken ct = default);
 
     /// <summary>
     /// Removes a single session.
     /// </summary>
-    Task RemoveAsync(string token, CancellationToken ct = default);
+    Task RemoveAsync(Guid sessionId, CancellationToken ct = default);
 
     /// <summary>
     /// Removes all sessions for a user.

@@ -26,6 +26,21 @@ public static class Constants
         public const string Role = "role";
 
         /// <summary>
+        /// Human-readable role name claim.
+        /// </summary>
+        public const string RoleName = "role_name";
+
+        /// <summary>
+        /// Permission claim.
+        /// </summary>
+        public const string Permission = "permission";
+
+        /// <summary>
+        /// Session identifier claim.
+        /// </summary>
+        public const string SessionId = "session_id";
+
+        /// <summary>
         /// Email claim.
         /// </summary>
         public const string Email = "email";

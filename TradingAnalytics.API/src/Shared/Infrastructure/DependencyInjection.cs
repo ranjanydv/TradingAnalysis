@@ -4,6 +4,7 @@ using FirebaseAdmin;
 using FluentValidation;
 using Google.Apis.Auth.OAuth2;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using TradingAnalytics.Shared.Infrastructure.Auth;
 using TradingAnalytics.Shared.Infrastructure.Behaviours;
@@ -155,6 +157,8 @@ public static class DependencyInjection
             options.AddPolicy(Policies.AnyActor, policy => policy.RequireAuthenticatedUser());
         });
 
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<IJwtService, JwtService>();
         return services;
     }
@@ -167,7 +171,46 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc(SwaggerGroups.Customer, new OpenApiInfo
+            {
+                Title = "Trading Analytics - Customer API",
+                Version = "v1",
+                Description = "Endpoints for customer-facing mobile and web applications"
+            });
+
+            options.SwaggerDoc(SwaggerGroups.Admin, new OpenApiInfo
+            {
+                Title = "Trading Analytics - Admin API",
+                Version = "v1",
+                Description = "Endpoints for admin dashboard and internal tooling"
+            });
+
+            options.DocInclusionPredicate((docName, apiDesc) => docName == apiDesc.GroupName);
+
+            var securityScheme = new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Enter JWT token"
+            };
+
+            options.AddSecurityDefinition("Bearer", securityScheme);
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
 
         return services;
     }

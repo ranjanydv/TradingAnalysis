@@ -1,5 +1,6 @@
-using System.Security.Cryptography;
 using TradingAnalytics.Modules.Identity.Domain.Enums;
+using TradingAnalytics.Shared.Infrastructure.Auth;
+using TradingAnalytics.Shared.Kernel;
 
 namespace TradingAnalytics.Modules.Identity.Domain.Entities;
 
@@ -23,9 +24,14 @@ public sealed class CustomerSession
     public Guid CustomerId { get; private set; }
 
     /// <summary>
-    /// Gets the raw session token.
+    /// Gets the hashed refresh token.
     /// </summary>
-    public string Token { get; private set; } = string.Empty;
+    public string RefreshTokenHash { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the optional access token JTI.
+    /// </summary>
+    public string? AccessTokenJti { get; private set; }
 
     /// <summary>
     /// Gets the expiration timestamp in UTC.
@@ -58,6 +64,11 @@ public sealed class CustomerSession
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets the last update timestamp in UTC.
+    /// </summary>
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Gets a value indicating whether the session is expired.
     /// </summary>
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
@@ -70,26 +81,21 @@ public sealed class CustomerSession
     /// <param name="deviceId">The optional device identifier.</param>
     /// <param name="ipAddress">The optional IP address.</param>
     /// <param name="userAgent">The optional user agent.</param>
-    /// <returns>The created session and raw token.</returns>
-    public static (CustomerSession Session, string RawToken) Create(Guid customerId, SessionType type, Guid? deviceId = null, string? ipAddress = null, string? userAgent = null)
+    /// <returns>The created session and raw refresh token.</returns>
+    public static (CustomerSession Session, string RawRefreshToken) Create(Guid customerId, SessionType type, Guid? deviceId = null, string? ipAddress = null, string? userAgent = null)
     {
-        var rawToken = CreateToken();
+        var (rawToken, tokenHash) = RefreshTokenHasher.Generate();
         var expiry = type == SessionType.Mobile ? DateTime.UtcNow.AddDays(30) : DateTime.UtcNow.AddDays(7);
         return (new CustomerSession
         {
+            Id = NewId.Next(),
             CustomerId = customerId,
-            Token = rawToken,
+            RefreshTokenHash = tokenHash,
             ExpiresAt = expiry,
             Type = type,
             UserDeviceId = deviceId,
             IpAddress = ipAddress,
             UserAgent = userAgent,
         }, rawToken);
-    }
-
-    private static string CreateToken()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(48);
-        return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
     }
 }

@@ -12,9 +12,9 @@ public sealed class RedisSessionStore(IConnectionMultiplexer redis) : ISessionSt
     private readonly IDatabase _database = (redis ?? throw new ArgumentNullException(nameof(redis))).GetDatabase();
 
     /// <inheritdoc />
-    public async Task SetAsync(string token, SessionData data, TimeSpan ttl, CancellationToken ct = default)
+    public async Task SetAsync(Guid sessionId, SessionData data, TimeSpan ttl, CancellationToken ct = default)
     {
-        var key = SessionKey(token);
+        var key = SessionKey(sessionId);
         var json = JsonSerializer.Serialize(data);
 
         await _database.StringSetAsync(key, json, ttl).ConfigureAwait(false);
@@ -23,21 +23,21 @@ public sealed class RedisSessionStore(IConnectionMultiplexer redis) : ISessionSt
     }
 
     /// <inheritdoc />
-    public async Task<SessionData?> GetAsync(string token, CancellationToken ct = default)
+    public async Task<SessionData?> GetAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var value = await _database.StringGetAsync(SessionKey(token)).ConfigureAwait(false);
+        var value = await _database.StringGetAsync(SessionKey(sessionId)).ConfigureAwait(false);
         return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<SessionData>(value.ToString());
     }
 
     /// <inheritdoc />
-    public async Task RemoveAsync(string token, CancellationToken ct = default)
+    public async Task RemoveAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var data = await GetAsync(token, ct).ConfigureAwait(false);
-        await _database.KeyDeleteAsync(SessionKey(token)).ConfigureAwait(false);
+        var data = await GetAsync(sessionId, ct).ConfigureAwait(false);
+        await _database.KeyDeleteAsync(SessionKey(sessionId)).ConfigureAwait(false);
 
         if (data is not null)
         {
-            await _database.SetRemoveAsync(UserSetKey(data.UserId), SessionKey(token)).ConfigureAwait(false);
+            await _database.SetRemoveAsync(UserSetKey(data.UserId), SessionKey(sessionId)).ConfigureAwait(false);
         }
     }
 
@@ -55,7 +55,7 @@ public sealed class RedisSessionStore(IConnectionMultiplexer redis) : ISessionSt
         await _database.KeyDeleteAsync(UserSetKey(userId)).ConfigureAwait(false);
     }
 
-    private static string SessionKey(string token) => $"session:{token}";
+    private static string SessionKey(Guid sessionId) => $"session:{sessionId}";
 
     private static string UserSetKey(Guid userId) => $"{UserSessionsSetPrefix}{userId}";
 }

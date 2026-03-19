@@ -4,6 +4,7 @@ using TradingAnalytics.Shared.Infrastructure;
 using TradingAnalytics.Shared.Infrastructure.Auth;
 using TradingAnalytics.Shared.Infrastructure.Http;
 using TradingAnalytics.Shared.Infrastructure.MongoDB;
+using TradingAnalytics.Shared.Kernel.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +38,16 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint($"/swagger/{SwaggerGroups.Customer}/swagger.json", "Customer API v1");
+        options.RoutePrefix = "swagger/customer";
+    });
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint($"/swagger/{SwaggerGroups.Admin}/swagger.json", "Admin API v1");
+        options.RoutePrefix = "swagger/admin";
+    });
 }
 
 app.UseHttpsRedirection();

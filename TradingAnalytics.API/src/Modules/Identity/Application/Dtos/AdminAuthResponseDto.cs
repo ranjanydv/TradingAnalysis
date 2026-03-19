@@ -6,14 +6,9 @@ namespace TradingAnalytics.Modules.Identity.Application.Dtos;
 public sealed class AdminAuthResponseDto
 {
     /// <summary>
-    /// Gets or sets the JWT access token.
+    /// Gets or sets the issued tokens.
     /// </summary>
-    public string AccessToken { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the raw session token.
-    /// </summary>
-    public string SessionToken { get; init; } = string.Empty;
+    public AuthTokensDto Tokens { get; init; } = new();
 
     /// <summary>
     /// Gets or sets the admin identifier.

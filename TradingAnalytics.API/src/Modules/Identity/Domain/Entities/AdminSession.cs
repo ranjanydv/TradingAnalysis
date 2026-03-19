@@ -1,5 +1,6 @@
-using System.Security.Cryptography;
 using TradingAnalytics.Modules.Identity.Domain.Enums;
+using TradingAnalytics.Shared.Infrastructure.Auth;
+using TradingAnalytics.Shared.Kernel;
 
 namespace TradingAnalytics.Modules.Identity.Domain.Entities;
 
@@ -23,9 +24,14 @@ public sealed class AdminSession
     public Guid AdminId { get; private set; }
 
     /// <summary>
-    /// Gets the raw session token.
+    /// Gets the hashed refresh token.
     /// </summary>
-    public string Token { get; private set; } = string.Empty;
+    public string RefreshTokenHash { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the optional access token JTI.
+    /// </summary>
+    public string? AccessTokenJti { get; private set; }
 
     /// <summary>
     /// Gets the expiration timestamp in UTC.
@@ -53,6 +59,11 @@ public sealed class AdminSession
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets the last update timestamp in UTC.
+    /// </summary>
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Gets a value indicating whether the session is expired.
     /// </summary>
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
@@ -64,15 +75,16 @@ public sealed class AdminSession
     /// <param name="type">The session type.</param>
     /// <param name="ipAddress">The optional IP address.</param>
     /// <param name="userAgent">The optional user agent.</param>
-    /// <returns>The created session and raw token.</returns>
-    public static (AdminSession Session, string RawToken) Create(Guid adminId, SessionType type, string? ipAddress = null, string? userAgent = null)
+    /// <returns>The created session and raw refresh token.</returns>
+    public static (AdminSession Session, string RawRefreshToken) Create(Guid adminId, SessionType type, string? ipAddress = null, string? userAgent = null)
     {
-        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        var (rawToken, tokenHash) = RefreshTokenHasher.Generate();
         return (new AdminSession
         {
+            Id = NewId.Next(),
             AdminId = adminId,
-            Token = rawToken,
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            RefreshTokenHash = tokenHash,
+            ExpiresAt = DateTime.UtcNow.AddHours(8),
             Type = type,
             IpAddress = ipAddress,
             UserAgent = userAgent,

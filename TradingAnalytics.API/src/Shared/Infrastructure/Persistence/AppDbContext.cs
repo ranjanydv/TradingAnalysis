@@ -49,6 +49,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator medi
     public DbSet<Verification> Verifications => Set<Verification>();
 
     /// <summary>
+    /// Gets the roles set.
+    /// </summary>
+    public DbSet<Role> Roles => Set<Role>();
+
+    /// <summary>
+    /// Gets the permissions set.
+    /// </summary>
+    public DbSet<Permission> Permissions => Set<Permission>();
+
+    /// <summary>
+    /// Gets the role permissions set.
+    /// </summary>
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    /// <summary>
     /// Configures the model for all infrastructure assemblies.
     /// </summary>
     /// <param name="modelBuilder">The model builder.</param>

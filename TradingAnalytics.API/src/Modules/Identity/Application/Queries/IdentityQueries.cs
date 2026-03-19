@@ -28,14 +28,27 @@ public sealed record GetMyDevicesQuery() : IRequest<Result<List<DeviceDto>>>;
 /// <summary>
 /// Gets a customer by identifier.
 /// </summary>
-/// <param name="Id">The customer identifier.</param>
 public sealed record GetCustomerByIdQuery(Guid Id) : IRequest<Result<CustomerDetailDto>>;
 
 /// <summary>
 /// Gets customers using cursor pagination.
 /// </summary>
-/// <param name="Params">The query parameters.</param>
 public sealed record GetAllCustomersQuery(QueryParams Params) : IRequest<Result<CursorResult<CustomerSummaryDto>>>;
+
+/// <summary>
+/// Gets all roles.
+/// </summary>
+public sealed record GetRolesQuery() : IRequest<Result<List<RoleDto>>>;
+
+/// <summary>
+/// Gets a role with its permissions.
+/// </summary>
+public sealed record GetRoleByIdQuery(int Id) : IRequest<Result<RoleDetailDto>>;
+
+/// <summary>
+/// Gets all permissions.
+/// </summary>
+public sealed record GetPermissionsQuery() : IRequest<Result<List<PermissionDto>>>;
 
 internal sealed class GetCurrentCustomerHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetCurrentCustomerQuery, Result<CustomerProfileDto>>
 {
@@ -62,8 +75,31 @@ internal sealed class GetMySessionsHandler(AppDbContext db, ICurrentUserService 
             return Result<List<SessionDto>>.Failure("User is not authenticated.");
         }
 
-        var sessions = await db.CustomerSessions.Where(x => x.CustomerId == currentUser.UserId.Value).OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
-        return Result<List<SessionDto>>.Success(sessions.Select(x => x.ToDto()).ToList());
+        var sessions = await db.CustomerSessions
+            .Where(x => x.CustomerId == currentUser.UserId.Value)
+            .GroupJoin(
+                db.UserDevices,
+                session => session.UserDeviceId,
+                device => device.Id,
+                (session, devices) => new { Session = session, Device = devices.FirstOrDefault() })
+            .OrderByDescending(x => x.Session.CreatedAt)
+            .ToListAsync(ct);
+
+        return Result<List<SessionDto>>.Success(sessions.Select(x =>
+        {
+            var dto = x.Session.ToDto();
+            return new SessionDto
+            {
+                SessionId = dto.SessionId,
+                CreatedAt = dto.CreatedAt,
+                ExpiresAt = dto.ExpiresAt,
+                Type = dto.Type,
+                IpAddress = dto.IpAddress,
+                DeviceName = x.Device?.DeviceName,
+                DeviceType = x.Device?.DeviceType.ToString().ToLowerInvariant(),
+                IsCurrentSession = currentUser.SessionId == x.Session.Id
+            };
+        }).ToList());
     }
 }
 
@@ -111,5 +147,71 @@ internal sealed class GetAllCustomersHandler(AppDbContext db) : IRequestHandler<
             cursor.Items.Select(x => x.ToSummaryDto()).ToList(),
             cursor.NextCursor,
             cursor.PrevCursor));
+    }
+}
+
+internal sealed class GetRolesHandler(AppDbContext db) : IRequestHandler<GetRolesQuery, Result<List<RoleDto>>>
+{
+    public async Task<Result<List<RoleDto>>> Handle(GetRolesQuery request, CancellationToken ct)
+    {
+        var roles = await db.Roles.OrderBy(x => x.Name).ToListAsync(ct);
+        return Result<List<RoleDto>>.Success(roles.Select(x => new RoleDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            Description = x.Description,
+            IsSystemRole = x.IsSystemRole
+        }).ToList());
+    }
+}
+
+internal sealed class GetRoleByIdHandler(AppDbContext db) : IRequestHandler<GetRoleByIdQuery, Result<RoleDetailDto>>
+{
+    public async Task<Result<RoleDetailDto>> Handle(GetRoleByIdQuery request, CancellationToken ct)
+    {
+        var role = await db.Roles.FirstOrDefaultAsync(x => x.Id == request.Id, ct);
+        if (role is null)
+        {
+            return Result<RoleDetailDto>.Failure("Role not found.");
+        }
+
+        var permissions = await db.RolePermissions
+            .Where(x => x.RoleId == role.Id)
+            .Join(db.Permissions, rp => rp.PermissionId, p => p.Id, (_, p) => p)
+            .OrderBy(x => x.Module)
+            .ThenBy(x => x.Action)
+            .ToListAsync(ct);
+
+        return Result<RoleDetailDto>.Success(new RoleDetailDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            IsSystemRole = role.IsSystemRole,
+            Permissions = permissions.Select(x => new PermissionDto
+            {
+                Id = x.Id,
+                Module = x.Module,
+                Action = x.Action,
+                Code = x.Code,
+                Description = x.Description
+            }).ToList()
+        });
+    }
+}
+
+internal sealed class GetPermissionsHandler(AppDbContext db) : IRequestHandler<GetPermissionsQuery, Result<List<PermissionDto>>>
+{
+    public async Task<Result<List<PermissionDto>>> Handle(GetPermissionsQuery request, CancellationToken ct)
+    {
+        var permissions = await db.Permissions.OrderBy(x => x.Module).ThenBy(x => x.Action).ToListAsync(ct);
+        return Result<List<PermissionDto>>.Success(permissions.Select(x => new PermissionDto
+        {
+            Id = x.Id,
+            Module = x.Module,
+            Action = x.Action,
+            Code = x.Code,
+            Description = x.Description
+        }).ToList());
     }
 }

@@ -1,4 +1,5 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +15,10 @@ public static class IdentityModule
     /// </summary>
     public static IServiceCollection AddIdentityModule(this IServiceCollection services, IConfiguration config)
     {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(config);
+
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(IdentityModule)));
         services.AddValidatorsFromAssemblyContaining(typeof(IdentityModule));
         return services;
     }

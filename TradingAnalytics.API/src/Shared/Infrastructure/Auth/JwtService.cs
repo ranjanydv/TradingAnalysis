@@ -15,13 +15,21 @@ public sealed class JwtService(IOptions<JwtConfig> config) : IJwtService
     private readonly JwtConfig _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
 
     /// <inheritdoc />
-    public string GenerateCustomerToken(Guid customerId, string? email, string? phone, string role)
+    public string GenerateCustomerToken(
+        Guid customerId,
+        string? email,
+        string? phone,
+        string role,
+        IEnumerable<string> permissions,
+        Guid sessionId)
     {
         var claims = new List<Claim>
         {
             new(Constants.ClaimTypes.UserId, customerId.ToString()),
             new(Constants.ClaimTypes.ActorType, Constants.ActorTypes.Customer),
             new(Constants.ClaimTypes.Role, role),
+            new(Constants.ClaimTypes.RoleName, role),
+            new(Constants.ClaimTypes.SessionId, sessionId.ToString()),
         };
 
         if (email is not null)
@@ -34,17 +42,27 @@ public sealed class JwtService(IOptions<JwtConfig> config) : IJwtService
             claims.Add(new Claim(Constants.ClaimTypes.Phone, phone));
         }
 
+        claims.AddRange(permissions.Select(permission => new Claim(Constants.ClaimTypes.Permission, permission)));
+
         return Build(claims);
     }
 
     /// <inheritdoc />
-    public string GenerateAdminToken(Guid adminId, string email, string role) =>
+    public string GenerateAdminToken(
+        Guid adminId,
+        string email,
+        string role,
+        IEnumerable<string> permissions,
+        Guid sessionId) =>
         Build(
             [
                 new Claim(Constants.ClaimTypes.UserId, adminId.ToString()),
                 new Claim(Constants.ClaimTypes.ActorType, Constants.ActorTypes.Admin),
                 new Claim(Constants.ClaimTypes.Role, role),
+                new Claim(Constants.ClaimTypes.RoleName, role),
+                new Claim(Constants.ClaimTypes.SessionId, sessionId.ToString()),
                 new Claim(Constants.ClaimTypes.Email, email),
+                .. permissions.Select(permission => new Claim(Constants.ClaimTypes.Permission, permission)),
             ]);
 
     private string Build(IEnumerable<Claim> claims)

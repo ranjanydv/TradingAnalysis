@@ -10,8 +10,9 @@ using TradingAnalytics.Shared.Kernel.Http;
 namespace TradingAnalytics.Modules.Identity.Presentation.Controllers;
 
 /// <summary>
-/// Exposes customer and authentication endpoints.
+/// Exposes customer-facing authentication endpoints.
 /// </summary>
+[ApiExplorerSettings(GroupName = SwaggerGroups.Customer)]
 [Route("api/v1/auth")]
 public sealed class AuthController(ISender sender) : AppControllerBase
 {
@@ -66,21 +67,13 @@ public sealed class AuthController(ISender sender) : AppControllerBase
         OkResult(await _sender.Send(command, ct), "Login successful.");
 
     /// <summary>
-    /// Authenticates an administrator.
-    /// </summary>
-    [HttpPost("login/admin")]
-    [AllowAnonymous]
-    public async Task<IActionResult> AdminLogin(AdminLoginCommand command, CancellationToken ct) =>
-        OkResult(await _sender.Send(command, ct), "Admin login successful.");
-
-    /// <summary>
-    /// Logs out a single session.
+    /// Logs out the current session.
     /// </summary>
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout(LogoutCommand command, CancellationToken ct)
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        var result = await _sender.Send(command, ct);
+        var result = await _sender.Send(new LogoutCommand(), ct);
         return result.IsFailure ? BadRequest(ApiResponse<object?>.Ok(result.Error!)) : OkMessage("Logged out.");
     }
 
@@ -96,7 +89,7 @@ public sealed class AuthController(ISender sender) : AppControllerBase
     }
 
     /// <summary>
-    /// Refreshes the access token from an existing session.
+    /// Refreshes a token pair using a refresh token.
     /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
@@ -139,17 +132,6 @@ public sealed class AuthController(ISender sender) : AppControllerBase
     }
 
     /// <summary>
-    /// Registers or updates a customer device.
-    /// </summary>
-    [HttpPost("devices")]
-    [Authorize(Policy = Policies.CustomerOnly)]
-    public async Task<IActionResult> RegisterDevice(RegisterDeviceCommand command, CancellationToken ct)
-    {
-        var result = await _sender.Send(command, ct);
-        return result.IsFailure ? BadRequest(ApiResponse<object?>.Ok(result.Error!)) : OkMessage("Device registered.");
-    }
-
-    /// <summary>
     /// Gets the current customer profile.
     /// </summary>
     [HttpGet("me")]
@@ -166,10 +148,13 @@ public sealed class AuthController(ISender sender) : AppControllerBase
         OkResult(await _sender.Send(new GetMySessionsQuery(), ct), "Sessions retrieved.");
 
     /// <summary>
-    /// Gets the current customer's devices.
+    /// Revokes one of the current customer's sessions.
     /// </summary>
-    [HttpGet("me/devices")]
+    [HttpDelete("me/sessions/{sessionId:guid}")]
     [Authorize(Policy = Policies.CustomerOnly)]
-    public async Task<IActionResult> MyDevices(CancellationToken ct) =>
-        OkResult(await _sender.Send(new GetMyDevicesQuery(), ct), "Devices retrieved.");
+    public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new RevokeSessionCommand(sessionId), ct);
+        return result.IsFailure ? BadRequest(ApiResponse<object?>.Ok(result.Error!)) : OkMessage("Session revoked.");
+    }
 }

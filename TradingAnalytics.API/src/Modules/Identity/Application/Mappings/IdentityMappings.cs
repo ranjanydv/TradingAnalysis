@@ -53,15 +53,11 @@ internal static class IdentityMappings
 
     public static SessionDto ToDto(this CustomerSession session) => new()
     {
-        Id = session.Id,
-        Token = session.Token,
+        SessionId = session.Id,
         CreatedAt = session.CreatedAt,
         ExpiresAt = session.ExpiresAt,
-        Type = session.Type,
-        UserDeviceId = session.UserDeviceId,
+        Type = session.Type.ToString().ToLowerInvariant(),
         IpAddress = session.IpAddress,
-        UserAgent = session.UserAgent,
-        IsExpired = session.IsExpired,
     };
 
     public static DeviceDto ToDto(this UserDevice device) => new()
@@ -77,18 +73,22 @@ internal static class IdentityMappings
         UpdatedAt = device.UpdatedAt,
     };
 
-    public static SessionData ToSessionData(this CustomerSession session, string role) => new(
+    public static SessionData ToSessionData(this CustomerSession session, string role, List<string> permissions) => new(
+        session.Id,
         session.CustomerId,
         "customer",
         role,
+        permissions,
         session.UserDeviceId,
         session.Type.ToString().ToLowerInvariant(),
         session.ExpiresAt);
 
-    public static SessionData ToSessionData(this AdminSession session, string role) => new(
+    public static SessionData ToSessionData(this AdminSession session, string role, List<string> permissions) => new(
+        session.Id,
         session.AdminId,
         "admin",
         role,
+        permissions,
         null,
         session.Type.ToString().ToLowerInvariant(),
         session.ExpiresAt);

@@ -1,5 +1,3 @@
-using TradingAnalytics.Modules.Identity.Domain.Enums;
-
 namespace TradingAnalytics.Modules.Identity.Application.Dtos;
 
 /// <summary>
@@ -10,12 +8,7 @@ public sealed class SessionDto
     /// <summary>
     /// Gets or sets the session identifier.
     /// </summary>
-    public Guid Id { get; init; }
-
-    /// <summary>
-    /// Gets or sets the raw session token.
-    /// </summary>
-    public string Token { get; init; } = string.Empty;
+    public Guid SessionId { get; init; }
 
     /// <summary>
     /// Gets or sets the creation timestamp in UTC.
@@ -30,12 +23,17 @@ public sealed class SessionDto
     /// <summary>
     /// Gets or sets the session type.
     /// </summary>
-    public SessionType Type { get; init; }
+    public string Type { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the optional linked user-device identifier.
+    /// Gets or sets the device display name.
     /// </summary>
-    public Guid? UserDeviceId { get; init; }
+    public string? DeviceName { get; init; }
+
+    /// <summary>
+    /// Gets or sets the device type.
+    /// </summary>
+    public string? DeviceType { get; init; }
 
     /// <summary>
     /// Gets or sets the originating IP address.
@@ -43,12 +41,7 @@ public sealed class SessionDto
     public string? IpAddress { get; init; }
 
     /// <summary>
-    /// Gets or sets the user agent.
+    /// Gets or sets a value indicating whether this is the current session.
     /// </summary>
-    public string? UserAgent { get; init; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the session is expired.
-    /// </summary>
-    public bool IsExpired { get; init; }
+    public bool IsCurrentSession { get; init; }
 }

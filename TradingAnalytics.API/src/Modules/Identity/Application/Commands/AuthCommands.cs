@@ -8,8 +8,10 @@ using TradingAnalytics.Modules.Identity.Application.Mappings;
 using TradingAnalytics.Modules.Identity.Domain.Entities;
 using TradingAnalytics.Modules.Identity.Domain.Enums;
 using TradingAnalytics.Shared.Infrastructure.Auth;
+using TradingAnalytics.Shared.Infrastructure.Cache;
 using TradingAnalytics.Shared.Infrastructure.Persistence;
 using TradingAnalytics.Shared.Infrastructure.Session;
+using TradingAnalytics.Shared.Kernel;
 using TradingAnalytics.Shared.Kernel.Interfaces;
 using TradingAnalytics.Shared.Kernel.Results;
 
@@ -18,69 +20,42 @@ namespace TradingAnalytics.Modules.Identity.Application.Commands;
 /// <summary>
 /// Registers a customer with email and password credentials.
 /// </summary>
-/// <param name="Name">The customer name.</param>
-/// <param name="Email">The customer email.</param>
-/// <param name="Password">The plaintext password.</param>
 public sealed record RegisterWithEmailCommand(string Name, string Email, string Password) : IRequest<Result<AuthResponseDto>>;
 
 /// <summary>
 /// Starts customer registration using a phone number.
 /// </summary>
-/// <param name="Name">The customer name.</param>
-/// <param name="Phone">The customer phone number.</param>
 public sealed record RegisterWithPhoneCommand(string Name, string Phone) : IRequest<Result<VerificationResponseDto>>;
 
 /// <summary>
 /// Completes phone registration after OTP verification.
 /// </summary>
-/// <param name="CustomerId">The customer identifier.</param>
-/// <param name="VerificationId">The verification identifier.</param>
-/// <param name="RawOtp">The raw OTP code.</param>
-/// <param name="Password">The new plaintext password.</param>
 public sealed record VerifyPhoneRegistrationCommand(Guid CustomerId, Guid VerificationId, string RawOtp, string Password) : IRequest<Result<AuthResponseDto>>;
 
 /// <summary>
 /// Authenticates a customer using email and password.
 /// </summary>
-/// <param name="Email">The customer email.</param>
-/// <param name="Password">The plaintext password.</param>
-/// <param name="SessionType">The requested session type.</param>
-/// <param name="DeviceId">The optional device identifier.</param>
-/// <param name="IpAddress">The optional IP address.</param>
-/// <param name="UserAgent">The optional user agent.</param>
 public sealed record LoginWithEmailCommand(string Email, string Password, SessionType SessionType, Guid? DeviceId, string? IpAddress, string? UserAgent) : IRequest<Result<AuthResponseDto>>;
 
 /// <summary>
 /// Starts phone-based login for a customer.
 /// </summary>
-/// <param name="Phone">The customer phone number.</param>
 public sealed record LoginWithPhoneCommand(string Phone) : IRequest<Result<VerificationResponseDto>>;
 
 /// <summary>
 /// Completes phone-based login after OTP verification.
 /// </summary>
-/// <param name="VerificationId">The verification identifier.</param>
-/// <param name="RawOtp">The OTP code.</param>
-/// <param name="SessionType">The requested session type.</param>
-/// <param name="DeviceId">The optional device identifier.</param>
-/// <param name="IpAddress">The optional IP address.</param>
-/// <param name="UserAgent">The optional user agent.</param>
 public sealed record VerifyOtpLoginCommand(Guid VerificationId, string RawOtp, SessionType SessionType, Guid? DeviceId, string? IpAddress, string? UserAgent) : IRequest<Result<AuthResponseDto>>;
 
 /// <summary>
 /// Authenticates an administrator.
 /// </summary>
-/// <param name="Email">The admin email.</param>
-/// <param name="Password">The plaintext password.</param>
-/// <param name="IpAddress">The optional IP address.</param>
-/// <param name="UserAgent">The optional user agent.</param>
 public sealed record AdminLoginCommand(string Email, string Password, string? IpAddress, string? UserAgent) : IRequest<Result<AdminAuthResponseDto>>;
 
 /// <summary>
-/// Logs out a single session by raw session token.
+/// Logs out the current session.
 /// </summary>
-/// <param name="RawToken">The raw session token.</param>
-public sealed record LogoutCommand(string RawToken) : IRequest<Result>;
+public sealed record LogoutCommand() : IRequest<Result>;
 
 /// <summary>
 /// Logs out all sessions for the current actor.
@@ -88,37 +63,28 @@ public sealed record LogoutCommand(string RawToken) : IRequest<Result>;
 public sealed record LogoutAllCommand() : IRequest<Result>;
 
 /// <summary>
-/// Refreshes a JWT using an existing session token.
+/// Refreshes an access token pair using a rotating refresh token.
 /// </summary>
-/// <param name="RawToken">The raw session token.</param>
-public sealed record RefreshTokenCommand(string RawToken) : IRequest<Result<string>>;
+public sealed record RefreshTokenCommand(Guid SessionId, string RawRefreshToken) : IRequest<Result<AuthTokensDto>>;
 
 /// <summary>
 /// Starts a password-reset flow for an email address.
 /// </summary>
-/// <param name="Email">The target email.</param>
 public sealed record SendPasswordResetCommand(string Email) : IRequest<Result>;
 
 /// <summary>
 /// Resets a password using a verification token.
 /// </summary>
-/// <param name="RawToken">The raw reset token.</param>
-/// <param name="NewPassword">The new plaintext password.</param>
 public sealed record ResetPasswordCommand(string RawToken, string NewPassword) : IRequest<Result>;
 
 /// <summary>
 /// Verifies an email address using a verification token.
 /// </summary>
-/// <param name="RawToken">The raw verification token.</param>
 public sealed record VerifyEmailCommand(string RawToken) : IRequest<Result>;
 
 /// <summary>
 /// Registers or updates a customer device.
 /// </summary>
-/// <param name="DeviceId">The external device identifier.</param>
-/// <param name="DeviceType">The device platform.</param>
-/// <param name="DeviceName">The optional device name.</param>
-/// <param name="FcmToken">The optional FCM token.</param>
 public sealed record RegisterDeviceCommand(string DeviceId, DeviceType DeviceType, string? DeviceName, string? FcmToken) : IRequest<Result>;
 
 internal sealed class RegisterWithEmailCommandValidator : AbstractValidator<RegisterWithEmailCommand>
@@ -166,7 +132,6 @@ internal sealed class AdminLoginCommandValidator : AbstractValidator<AdminLoginC
 internal sealed class RegisterWithEmailHandler(
     AppDbContext db,
     IPasswordService passwordService,
-    IJwtService jwtService,
     INotificationService notificationService) : IRequestHandler<RegisterWithEmailCommand, Result<AuthResponseDto>>
 {
     public async Task<Result<AuthResponseDto>> Handle(RegisterWithEmailCommand request, CancellationToken ct)
@@ -203,8 +168,8 @@ internal sealed class RegisterWithEmailHandler(
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto
         {
-            AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, "customer"),
-            Customer = customer.ToProfileDto()
+            Tokens = new AuthTokensDto(),
+            Profile = customer.ToProfileDto()
         });
     }
 }
@@ -253,8 +218,7 @@ internal sealed class RegisterWithPhoneHandler(
 
 internal sealed class VerifyPhoneRegistrationHandler(
     AppDbContext db,
-    IPasswordService passwordService,
-    IJwtService jwtService) : IRequestHandler<VerifyPhoneRegistrationCommand, Result<AuthResponseDto>>
+    IPasswordService passwordService) : IRequestHandler<VerifyPhoneRegistrationCommand, Result<AuthResponseDto>>
 {
     public async Task<Result<AuthResponseDto>> Handle(VerifyPhoneRegistrationCommand request, CancellationToken ct)
     {
@@ -282,8 +246,8 @@ internal sealed class VerifyPhoneRegistrationHandler(
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto
         {
-            AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, "customer"),
-            Customer = customer.ToProfileDto()
+            Tokens = new AuthTokensDto(),
+            Profile = customer.ToProfileDto()
         });
     }
 }
@@ -292,13 +256,17 @@ internal sealed class LoginWithEmailHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,
-    ISessionStore sessionStore) : IRequestHandler<LoginWithEmailCommand, Result<AuthResponseDto>>
+    ISessionStore sessionStore,
+    ICacheService cacheService) : IRequestHandler<LoginWithEmailCommand, Result<AuthResponseDto>>
 {
     public async Task<Result<AuthResponseDto>> Handle(LoginWithEmailCommand request, CancellationToken ct)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(
-            x => x.ProviderId == "credential" && x.AccountId == request.Email.Trim().ToLowerInvariant() && x.ActorType == AccountActorType.Customer,
+            x => x.ProviderId == Constants.Providers.Credential
+                && x.AccountId == request.Email.Trim().ToLowerInvariant()
+                && x.ActorType == AccountActorType.Customer,
             ct);
+
         if (account is null || !account.VerifyPassword(passwordService, request.Password))
         {
             return Result<AuthResponseDto>.Failure("Invalid credentials.");
@@ -315,22 +283,39 @@ internal sealed class LoginWithEmailHandler(
             return Result<AuthResponseDto>.Failure("Account is banned.");
         }
 
-        if (request.SessionType == SessionType.Mobile)
+        if (request.SessionType == SessionType.Mobile && request.DeviceId.HasValue)
         {
-            await sessionStore.RemoveAllForUserAsync(customer.Id, ct);
-            db.CustomerSessions.RemoveRange(await db.CustomerSessions.Where(x => x.CustomerId == customer.Id && x.Type == SessionType.Mobile).ToListAsync(ct));
+            var oldSessions = await db.CustomerSessions
+                .Where(x => x.CustomerId == customer.Id && x.Type == SessionType.Mobile && x.UserDeviceId == request.DeviceId.Value)
+                .ToListAsync(ct);
+
+            foreach (var oldSession in oldSessions)
+            {
+                await sessionStore.RemoveAsync(oldSession.Id, ct);
+            }
+
+            db.CustomerSessions.RemoveRange(oldSessions);
         }
 
         var created = CustomerSession.Create(customer.Id, request.SessionType, request.DeviceId, request.IpAddress, request.UserAgent);
         db.CustomerSessions.Add(created.Session);
         await db.SaveChangesAsync(ct);
-        await sessionStore.SetAsync(created.RawToken, created.Session.ToSessionData("customer"), created.Session.ExpiresAt - DateTime.UtcNow, ct);
+
+        var permissions = await IdentityAuthSupport.LoadPermissionsAsync(cacheService, db, customer.RoleId, ct);
+        var roleName = await IdentityAuthSupport.LoadRoleNameAsync(db, customer.RoleId, ct);
+        await sessionStore.SetAsync(created.Session.Id, created.Session.ToSessionData(roleName, permissions), created.Session.ExpiresAt - DateTime.UtcNow, ct);
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto
         {
-            AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, "customer"),
-            SessionToken = created.RawToken,
-            Customer = customer.ToProfileDto()
+            Tokens = new AuthTokensDto
+            {
+                AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, roleName, permissions, created.Session.Id),
+                RefreshToken = created.RawRefreshToken,
+                SessionId = created.Session.Id,
+                AccessTokenExpiresInSeconds = 3600,
+                RefreshTokenExpiresInSeconds = request.SessionType == SessionType.Mobile ? 2592000 : 604800
+            },
+            Profile = customer.ToProfileDto()
         });
     }
 }
@@ -371,7 +356,8 @@ internal sealed class LoginWithPhoneHandler(
 internal sealed class VerifyOtpLoginHandler(
     AppDbContext db,
     IJwtService jwtService,
-    ISessionStore sessionStore) : IRequestHandler<VerifyOtpLoginCommand, Result<AuthResponseDto>>
+    ISessionStore sessionStore,
+    ICacheService cacheService) : IRequestHandler<VerifyOtpLoginCommand, Result<AuthResponseDto>>
 {
     public async Task<Result<AuthResponseDto>> Handle(VerifyOtpLoginCommand request, CancellationToken ct)
     {
@@ -396,13 +382,22 @@ internal sealed class VerifyOtpLoginHandler(
         var created = CustomerSession.Create(customer.Id, request.SessionType, request.DeviceId, request.IpAddress, request.UserAgent);
         db.CustomerSessions.Add(created.Session);
         await db.SaveChangesAsync(ct);
-        await sessionStore.SetAsync(created.RawToken, created.Session.ToSessionData("customer"), created.Session.ExpiresAt - DateTime.UtcNow, ct);
+
+        var permissions = await IdentityAuthSupport.LoadPermissionsAsync(cacheService, db, customer.RoleId, ct);
+        var roleName = await IdentityAuthSupport.LoadRoleNameAsync(db, customer.RoleId, ct);
+        await sessionStore.SetAsync(created.Session.Id, created.Session.ToSessionData(roleName, permissions), created.Session.ExpiresAt - DateTime.UtcNow, ct);
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto
         {
-            AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, "customer"),
-            SessionToken = created.RawToken,
-            Customer = customer.ToProfileDto()
+            Tokens = new AuthTokensDto
+            {
+                AccessToken = jwtService.GenerateCustomerToken(customer.Id, customer.Email, customer.Phone, roleName, permissions, created.Session.Id),
+                RefreshToken = created.RawRefreshToken,
+                SessionId = created.Session.Id,
+                AccessTokenExpiresInSeconds = 3600,
+                RefreshTokenExpiresInSeconds = request.SessionType == SessionType.Mobile ? 2592000 : 604800
+            },
+            Profile = customer.ToProfileDto()
         });
     }
 }
@@ -411,13 +406,17 @@ internal sealed class AdminLoginHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,
-    ISessionStore sessionStore) : IRequestHandler<AdminLoginCommand, Result<AdminAuthResponseDto>>
+    ISessionStore sessionStore,
+    ICacheService cacheService) : IRequestHandler<AdminLoginCommand, Result<AdminAuthResponseDto>>
 {
     public async Task<Result<AdminAuthResponseDto>> Handle(AdminLoginCommand request, CancellationToken ct)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(
-            x => x.ProviderId == "credential" && x.AccountId == request.Email.Trim().ToLowerInvariant() && x.ActorType == AccountActorType.Admin,
+            x => x.ProviderId == Constants.Providers.Credential
+                && x.AccountId == request.Email.Trim().ToLowerInvariant()
+                && x.ActorType == AccountActorType.Admin,
             ct);
+
         if (account is null || !account.VerifyPassword(passwordService, request.Password))
         {
             return Result<AdminAuthResponseDto>.Failure("Invalid credentials.");
@@ -437,15 +436,64 @@ internal sealed class AdminLoginHandler(
         var created = AdminSession.Create(admin.Id, SessionType.Web, request.IpAddress, request.UserAgent);
         db.AdminSessions.Add(created.Session);
         await db.SaveChangesAsync(ct);
-        await sessionStore.SetAsync(created.RawToken, created.Session.ToSessionData(admin.RoleId?.ToString() ?? "admin"), created.Session.ExpiresAt - DateTime.UtcNow, ct);
+
+        var permissions = await IdentityAuthSupport.LoadPermissionsAsync(cacheService, db, admin.RoleId, ct);
+        var roleName = await IdentityAuthSupport.LoadRoleNameAsync(db, admin.RoleId, ct, Constants.Roles.Admin);
+        await sessionStore.SetAsync(created.Session.Id, created.Session.ToSessionData(roleName, permissions), created.Session.ExpiresAt - DateTime.UtcNow, ct);
 
         return Result<AdminAuthResponseDto>.Success(new AdminAuthResponseDto
         {
-            AccessToken = jwtService.GenerateAdminToken(admin.Id, admin.Email!, admin.RoleId?.ToString() ?? "admin"),
-            SessionToken = created.RawToken,
+            Tokens = new AuthTokensDto
+            {
+                AccessToken = jwtService.GenerateAdminToken(admin.Id, admin.Email!, roleName, permissions, created.Session.Id),
+                RefreshToken = created.RawRefreshToken,
+                SessionId = created.Session.Id,
+                AccessTokenExpiresInSeconds = 3600,
+                RefreshTokenExpiresInSeconds = 28800
+            },
             AdminId = admin.Id,
             Email = admin.Email!,
             RoleId = admin.RoleId
         });
     }
+}
+
+internal static class IdentityAuthSupport
+{
+    public static Task<List<string>> LoadPermissionsAsync(ICacheService cacheService, AppDbContext db, int? roleId, CancellationToken ct)
+    {
+        if (!roleId.HasValue)
+        {
+            return Task.FromResult(new List<string>());
+        }
+
+        return cacheService.GetOrSetAsync(
+            $"role_permissions:{roleId.Value}",
+            async () => await db.RolePermissions
+                .Where(x => x.RoleId == roleId.Value)
+                .Join(db.Permissions, rp => rp.PermissionId, p => p.Id, (_, p) => p.Code)
+                .ToListAsync(ct),
+            TimeSpan.FromMinutes(10),
+            ct);
+    }
+
+    public static async Task<string> LoadRoleNameAsync(AppDbContext db, int? roleId, CancellationToken ct, string fallback = "customer")
+    {
+        if (!roleId.HasValue)
+        {
+            return fallback;
+        }
+
+        return await db.Roles.Where(x => x.Id == roleId.Value).Select(x => x.Name).FirstOrDefaultAsync(ct) ?? fallback;
+    }
+
+    public static AuthTokensDto ToTokens(string accessToken, string refreshToken, Guid sessionId, int refreshTokenExpiresInSeconds) =>
+        new()
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            SessionId = sessionId,
+            AccessTokenExpiresInSeconds = 3600,
+            RefreshTokenExpiresInSeconds = refreshTokenExpiresInSeconds
+        };
 }

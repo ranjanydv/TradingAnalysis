@@ -102,6 +102,16 @@ public sealed class Customer : AggregateRoot
     }
 
     /// <summary>
+    /// Assigns a role to the customer.
+    /// </summary>
+    /// <param name="roleId">The role identifier.</param>
+    public void AssignRole(int? roleId)
+    {
+        RoleId = roleId;
+        Touch();
+    }
+
+    /// <summary>
     /// Updates profile values.
     /// </summary>
     public Result UpdateProfile(string name, string? image)

@@ -16,6 +16,11 @@ public interface ICurrentUserService
     string? ActorType { get; }
 
     /// <summary>
+    /// Gets the current session identifier.
+    /// </summary>
+    Guid? SessionId { get; }
+
+    /// <summary>
     /// Gets the current role.
     /// </summary>
     string? Role { get; }

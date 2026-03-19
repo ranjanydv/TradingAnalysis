@@ -14,14 +14,14 @@ internal sealed class CustomerSessionConfiguration : IEntityTypeConfiguration<Cu
     {
         builder.ToTable("customer_sessions");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Token).HasMaxLength(128).IsRequired();
+        builder.Property(x => x.RefreshTokenHash).HasMaxLength(128).IsRequired();
+        builder.Property(x => x.AccessTokenJti).HasMaxLength(128);
         builder.Property(x => x.IpAddress).HasMaxLength(100);
         builder.Property(x => x.UserAgent).HasMaxLength(500);
         builder.Property(x => x.Type)
             .HasConversion(
                 x => x.ToString().ToLowerInvariant(),
                 x => Enum.Parse<SessionType>(x, true));
-        builder.HasIndex(x => x.Token).IsUnique();
         builder.HasIndex(x => x.CustomerId);
     }
 }

@@ -12,6 +12,7 @@ namespace TradingAnalytics.Modules.Identity.Presentation.Controllers;
 /// <summary>
 /// Exposes admin customer endpoints.
 /// </summary>
+[ApiExplorerSettings(GroupName = SwaggerGroups.Admin)]
 [Route("api/v1/admin/customers")]
 [Authorize(Policy = Policies.AdminOnly)]
 public sealed class AdminCustomersController(ISender sender) : AppControllerBase

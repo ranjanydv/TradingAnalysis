@@ -28,6 +28,16 @@ public sealed class CurrentUserService(IHttpContextAccessor accessor) : ICurrent
     public string? ActorType => User?.FindFirstValue(Constants.ClaimTypes.ActorType);
 
     /// <inheritdoc />
+    public Guid? SessionId
+    {
+        get
+        {
+            var value = User?.FindFirstValue(Constants.ClaimTypes.SessionId);
+            return Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
+
+    /// <inheritdoc />
     public string? Role => User?.FindFirstValue(Constants.ClaimTypes.Role);
 
     /// <inheritdoc />
