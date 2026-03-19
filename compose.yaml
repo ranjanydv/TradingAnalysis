@@ -1,0 +1,7 @@
+﻿services:
+  tradinganalytics.api:
+    image: tradinganalytics.api
+    build:
+      context: .
+      dockerfile: TradingAnalytics.API/Dockerfile
+
