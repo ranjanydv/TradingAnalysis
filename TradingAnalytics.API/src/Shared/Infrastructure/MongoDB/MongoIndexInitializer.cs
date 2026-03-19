@@ -6,7 +6,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB;
 /// <summary>
 /// Creates required MongoDB indexes at startup.
 /// </summary>
-public static class MongoIndexInitializer
+internal static class MongoIndexInitializer
 {
     /// <summary>
     /// Ensures all required infrastructure indexes exist.

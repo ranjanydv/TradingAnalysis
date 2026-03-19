@@ -9,7 +9,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the verification entity.
 /// </summary>
-public sealed class VerificationConfiguration : IEntityTypeConfiguration<Verification>
+internal sealed class VerificationConfiguration : IEntityTypeConfiguration<Verification>
 {
     public void Configure(EntityTypeBuilder<Verification> builder)
     {

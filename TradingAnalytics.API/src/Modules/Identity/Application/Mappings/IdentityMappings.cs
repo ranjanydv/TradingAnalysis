@@ -7,7 +7,7 @@ namespace TradingAnalytics.Modules.Identity.Application.Mappings;
 /// <summary>
 /// Provides Identity DTO mapping helpers.
 /// </summary>
-public static class IdentityMappings
+internal static class IdentityMappings
 {
     public static CustomerProfileDto ToProfileDto(this Customer customer) => new()
     {

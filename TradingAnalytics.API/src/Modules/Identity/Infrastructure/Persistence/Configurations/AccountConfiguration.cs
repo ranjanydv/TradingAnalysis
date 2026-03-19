@@ -9,7 +9,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the account entity.
 /// </summary>
-public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
+internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
 {
     public void Configure(EntityTypeBuilder<Account> builder)
     {

@@ -7,7 +7,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB.Documents;
 /// Represents an audit log document stored in MongoDB.
 /// </summary>
 [BsonCollection("audit_logs")]
-public sealed class AuditLogDocument
+internal sealed class AuditLogDocument
 {
     [BsonId, BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
@@ -52,7 +52,7 @@ public sealed class AuditLogDocument
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
-public sealed class AuditResourceDocument
+internal sealed class AuditResourceDocument
 {
     [BsonElement("id")]
     public string? Id { get; set; }
@@ -61,7 +61,7 @@ public sealed class AuditResourceDocument
     public string? Type { get; set; }
 }
 
-public sealed class AuditChangeDocument
+internal sealed class AuditChangeDocument
 {
     [BsonElement("field")]
     public string Field { get; set; } = string.Empty;
@@ -73,7 +73,7 @@ public sealed class AuditChangeDocument
     public BsonValue? To { get; set; }
 }
 
-public sealed class AuditRequestDocument
+internal sealed class AuditRequestDocument
 {
     [BsonElement("ip")]
     public string? Ip { get; set; }
@@ -94,7 +94,7 @@ public sealed class AuditRequestDocument
     public long? DurationMs { get; set; }
 }
 
-public sealed class AuditErrorDocument
+internal sealed class AuditErrorDocument
 {
     [BsonElement("code")]
     public string? Code { get; set; }

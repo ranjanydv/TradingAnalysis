@@ -7,7 +7,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB;
 /// <summary>
 /// Implements a generic MongoDB repository.
 /// </summary>
-public sealed class MongoRepository<T>(IMongoDatabase database) : IMongoRepository<T>
+internal sealed class MongoRepository<T>(IMongoDatabase database) : IMongoRepository<T>
 {
     /// <inheritdoc />
     public IMongoCollection<T> Collection { get; } = (database ?? throw new ArgumentNullException(nameof(database)))

@@ -8,7 +8,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the customer session entity.
 /// </summary>
-public sealed class CustomerSessionConfiguration : IEntityTypeConfiguration<CustomerSession>
+internal sealed class CustomerSessionConfiguration : IEntityTypeConfiguration<CustomerSession>
 {
     public void Configure(EntityTypeBuilder<CustomerSession> builder)
     {

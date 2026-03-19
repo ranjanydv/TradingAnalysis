@@ -8,7 +8,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB;
 /// <summary>
 /// Persists audit entries into MongoDB.
 /// </summary>
-public sealed class AuditLogger(IMongoRepository<AuditLogDocument> repository) : IAuditLogger
+internal sealed class AuditLogger(IMongoRepository<AuditLogDocument> repository) : IAuditLogger
 {
     private readonly IMongoRepository<AuditLogDocument> _repository = repository ?? throw new ArgumentNullException(nameof(repository));
 

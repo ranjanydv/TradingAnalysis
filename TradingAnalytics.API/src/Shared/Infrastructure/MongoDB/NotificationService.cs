@@ -11,7 +11,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB;
 /// <summary>
 /// Persists notifications and dispatches push delivery when applicable.
 /// </summary>
-public sealed class NotificationService(
+internal sealed class NotificationService(
     IMongoRepository<NotificationDocument> repository,
     IFirebaseMessagingService firebaseMessagingService,
     IMongoRepository<NotificationSettingDocument> settingsRepository) : INotificationService

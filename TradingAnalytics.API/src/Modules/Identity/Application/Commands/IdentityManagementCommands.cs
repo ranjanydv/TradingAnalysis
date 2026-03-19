@@ -14,10 +14,22 @@ using TradingAnalytics.Shared.Kernel.Results;
 
 namespace TradingAnalytics.Modules.Identity.Application.Commands;
 
+/// <summary>
+/// Creates a customer as an administrator.
+/// </summary>
+/// <param name="Name">The customer name.</param>
+/// <param name="Email">The customer email.</param>
+/// <param name="Password">The plaintext password.</param>
 public sealed record AdminCreateCustomerCommand(string Name, string Email, string Password) : IRequest<Result<AuthResponseDto>>;
+
+/// <summary>
+/// Bans a customer as an administrator.
+/// </summary>
+/// <param name="CustomerId">The customer identifier.</param>
+/// <param name="Reason">The ban reason.</param>
 public sealed record AdminBanCustomerCommand(Guid CustomerId, string Reason) : IRequest<Result>;
 
-public sealed class LogoutHandler(AppDbContext db, ISessionStore sessionStore) : IRequestHandler<LogoutCommand, Result>
+internal sealed class LogoutHandler(AppDbContext db, ISessionStore sessionStore) : IRequestHandler<LogoutCommand, Result>
 {
     public async Task<Result> Handle(LogoutCommand request, CancellationToken ct)
     {
@@ -39,7 +51,7 @@ public sealed class LogoutHandler(AppDbContext db, ISessionStore sessionStore) :
     }
 }
 
-public sealed class LogoutAllHandler(
+internal sealed class LogoutAllHandler(
     AppDbContext db,
     ISessionStore sessionStore,
     ICurrentUserService currentUser) : IRequestHandler<LogoutAllCommand, Result>
@@ -66,7 +78,7 @@ public sealed class LogoutAllHandler(
     }
 }
 
-public sealed class RefreshTokenHandler(
+internal sealed class RefreshTokenHandler(
     AppDbContext db,
     ISessionStore sessionStore,
     IJwtService jwtService) : IRequestHandler<RefreshTokenCommand, Result<string>>
@@ -112,7 +124,7 @@ public sealed class RefreshTokenHandler(
     }
 }
 
-public sealed class SendPasswordResetHandler(
+internal sealed class SendPasswordResetHandler(
     AppDbContext db,
     INotificationService notificationService) : IRequestHandler<SendPasswordResetCommand, Result>
 {
@@ -143,7 +155,7 @@ public sealed class SendPasswordResetHandler(
     }
 }
 
-public sealed class ResetPasswordHandler(
+internal sealed class ResetPasswordHandler(
     AppDbContext db,
     IPasswordService passwordService,
     ISessionStore sessionStore) : IRequestHandler<ResetPasswordCommand, Result>
@@ -186,7 +198,7 @@ public sealed class ResetPasswordHandler(
     }
 }
 
-public sealed class VerifyEmailHandler(AppDbContext db) : IRequestHandler<VerifyEmailCommand, Result>
+internal sealed class VerifyEmailHandler(AppDbContext db) : IRequestHandler<VerifyEmailCommand, Result>
 {
     public async Task<Result> Handle(VerifyEmailCommand request, CancellationToken ct)
     {
@@ -217,7 +229,7 @@ public sealed class VerifyEmailHandler(AppDbContext db) : IRequestHandler<Verify
     }
 }
 
-public sealed class RegisterDeviceHandler(
+internal sealed class RegisterDeviceHandler(
     AppDbContext db,
     ICurrentUserService currentUser) : IRequestHandler<RegisterDeviceCommand, Result>
 {
@@ -247,7 +259,7 @@ public sealed class RegisterDeviceHandler(
     }
 }
 
-public sealed class AdminCreateCustomerHandler(
+internal sealed class AdminCreateCustomerHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,
@@ -290,7 +302,7 @@ public sealed class AdminCreateCustomerHandler(
     }
 }
 
-public sealed class AdminBanCustomerHandler(
+internal sealed class AdminBanCustomerHandler(
     AppDbContext db,
     ISessionStore sessionStore,
     IAuditLogger auditLogger) : IRequestHandler<AdminBanCustomerCommand, Result>

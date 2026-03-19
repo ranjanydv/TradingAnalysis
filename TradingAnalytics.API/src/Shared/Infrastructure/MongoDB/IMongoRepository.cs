@@ -5,7 +5,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB;
 /// <summary>
 /// Provides generic MongoDB document persistence helpers.
 /// </summary>
-public interface IMongoRepository<T>
+internal interface IMongoRepository<T>
 {
     Task InsertAsync(T document, CancellationToken ct = default);
     Task<T?> FindByIdAsync(string id, CancellationToken ct = default);

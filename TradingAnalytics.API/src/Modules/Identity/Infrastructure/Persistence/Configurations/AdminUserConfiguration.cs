@@ -7,7 +7,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the admin user entity.
 /// </summary>
-public sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUser>
+internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUser>
 {
     public void Configure(EntityTypeBuilder<AdminUser> builder)
     {

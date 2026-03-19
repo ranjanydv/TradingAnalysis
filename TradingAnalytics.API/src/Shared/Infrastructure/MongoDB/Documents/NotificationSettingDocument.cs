@@ -7,7 +7,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB.Documents;
 /// Represents user notification preferences.
 /// </summary>
 [BsonCollection("notification_settings")]
-public sealed class NotificationSettingDocument
+internal sealed class NotificationSettingDocument
 {
     [BsonId, BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = ObjectId.GenerateNewId().ToString();

@@ -8,7 +8,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the admin session entity.
 /// </summary>
-public sealed class AdminSessionConfiguration : IEntityTypeConfiguration<AdminSession>
+internal sealed class AdminSessionConfiguration : IEntityTypeConfiguration<AdminSession>
 {
     public void Configure(EntityTypeBuilder<AdminSession> builder)
     {

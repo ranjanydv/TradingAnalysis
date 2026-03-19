@@ -7,7 +7,7 @@ namespace TradingAnalytics.Shared.Infrastructure.MongoDB.Documents;
 /// Represents a persisted notification document.
 /// </summary>
 [BsonCollection("notifications")]
-public sealed class NotificationDocument
+internal sealed class NotificationDocument
 {
     [BsonId, BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
@@ -55,7 +55,7 @@ public sealed class NotificationDocument
 /// <summary>
 /// Represents per-surface delivery state for a notification.
 /// </summary>
-public sealed class SurfaceStatusDocument
+internal sealed class SurfaceStatusDocument
 {
     [BsonElement("state")]
     public string State { get; set; } = "pending";

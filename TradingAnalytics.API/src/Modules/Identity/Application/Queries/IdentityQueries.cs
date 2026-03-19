@@ -10,13 +10,34 @@ using TradingAnalytics.Shared.Kernel.Results;
 
 namespace TradingAnalytics.Modules.Identity.Application.Queries;
 
+/// <summary>
+/// Gets the current authenticated customer profile.
+/// </summary>
 public sealed record GetCurrentCustomerQuery() : IRequest<Result<CustomerProfileDto>>;
+
+/// <summary>
+/// Gets all customer sessions for the current user.
+/// </summary>
 public sealed record GetMySessionsQuery() : IRequest<Result<List<SessionDto>>>;
+
+/// <summary>
+/// Gets all customer devices for the current user.
+/// </summary>
 public sealed record GetMyDevicesQuery() : IRequest<Result<List<DeviceDto>>>;
+
+/// <summary>
+/// Gets a customer by identifier.
+/// </summary>
+/// <param name="Id">The customer identifier.</param>
 public sealed record GetCustomerByIdQuery(Guid Id) : IRequest<Result<CustomerDetailDto>>;
+
+/// <summary>
+/// Gets customers using cursor pagination.
+/// </summary>
+/// <param name="Params">The query parameters.</param>
 public sealed record GetAllCustomersQuery(QueryParams Params) : IRequest<Result<CursorResult<CustomerSummaryDto>>>;
 
-public sealed class GetCurrentCustomerHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetCurrentCustomerQuery, Result<CustomerProfileDto>>
+internal sealed class GetCurrentCustomerHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetCurrentCustomerQuery, Result<CustomerProfileDto>>
 {
     public async Task<Result<CustomerProfileDto>> Handle(GetCurrentCustomerQuery request, CancellationToken ct)
     {
@@ -32,7 +53,7 @@ public sealed class GetCurrentCustomerHandler(AppDbContext db, ICurrentUserServi
     }
 }
 
-public sealed class GetMySessionsHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetMySessionsQuery, Result<List<SessionDto>>>
+internal sealed class GetMySessionsHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetMySessionsQuery, Result<List<SessionDto>>>
 {
     public async Task<Result<List<SessionDto>>> Handle(GetMySessionsQuery request, CancellationToken ct)
     {
@@ -46,7 +67,7 @@ public sealed class GetMySessionsHandler(AppDbContext db, ICurrentUserService cu
     }
 }
 
-public sealed class GetMyDevicesHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetMyDevicesQuery, Result<List<DeviceDto>>>
+internal sealed class GetMyDevicesHandler(AppDbContext db, ICurrentUserService currentUser) : IRequestHandler<GetMyDevicesQuery, Result<List<DeviceDto>>>
 {
     public async Task<Result<List<DeviceDto>>> Handle(GetMyDevicesQuery request, CancellationToken ct)
     {
@@ -60,7 +81,7 @@ public sealed class GetMyDevicesHandler(AppDbContext db, ICurrentUserService cur
     }
 }
 
-public sealed class GetCustomerByIdHandler(AppDbContext db) : IRequestHandler<GetCustomerByIdQuery, Result<CustomerDetailDto>>
+internal sealed class GetCustomerByIdHandler(AppDbContext db) : IRequestHandler<GetCustomerByIdQuery, Result<CustomerDetailDto>>
 {
     public async Task<Result<CustomerDetailDto>> Handle(GetCustomerByIdQuery request, CancellationToken ct)
     {
@@ -71,7 +92,7 @@ public sealed class GetCustomerByIdHandler(AppDbContext db) : IRequestHandler<Ge
     }
 }
 
-public sealed class GetAllCustomersHandler(AppDbContext db) : IRequestHandler<GetAllCustomersQuery, Result<CursorResult<CustomerSummaryDto>>>
+internal sealed class GetAllCustomersHandler(AppDbContext db) : IRequestHandler<GetAllCustomersQuery, Result<CursorResult<CustomerSummaryDto>>>
 {
     public async Task<Result<CursorResult<CustomerSummaryDto>>> Handle(GetAllCustomersQuery request, CancellationToken ct)
     {

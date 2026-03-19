@@ -15,22 +15,113 @@ using TradingAnalytics.Shared.Kernel.Results;
 
 namespace TradingAnalytics.Modules.Identity.Application.Commands;
 
+/// <summary>
+/// Registers a customer with email and password credentials.
+/// </summary>
+/// <param name="Name">The customer name.</param>
+/// <param name="Email">The customer email.</param>
+/// <param name="Password">The plaintext password.</param>
 public sealed record RegisterWithEmailCommand(string Name, string Email, string Password) : IRequest<Result<AuthResponseDto>>;
+
+/// <summary>
+/// Starts customer registration using a phone number.
+/// </summary>
+/// <param name="Name">The customer name.</param>
+/// <param name="Phone">The customer phone number.</param>
 public sealed record RegisterWithPhoneCommand(string Name, string Phone) : IRequest<Result<VerificationResponseDto>>;
+
+/// <summary>
+/// Completes phone registration after OTP verification.
+/// </summary>
+/// <param name="CustomerId">The customer identifier.</param>
+/// <param name="VerificationId">The verification identifier.</param>
+/// <param name="RawOtp">The raw OTP code.</param>
+/// <param name="Password">The new plaintext password.</param>
 public sealed record VerifyPhoneRegistrationCommand(Guid CustomerId, Guid VerificationId, string RawOtp, string Password) : IRequest<Result<AuthResponseDto>>;
+
+/// <summary>
+/// Authenticates a customer using email and password.
+/// </summary>
+/// <param name="Email">The customer email.</param>
+/// <param name="Password">The plaintext password.</param>
+/// <param name="SessionType">The requested session type.</param>
+/// <param name="DeviceId">The optional device identifier.</param>
+/// <param name="IpAddress">The optional IP address.</param>
+/// <param name="UserAgent">The optional user agent.</param>
 public sealed record LoginWithEmailCommand(string Email, string Password, SessionType SessionType, Guid? DeviceId, string? IpAddress, string? UserAgent) : IRequest<Result<AuthResponseDto>>;
+
+/// <summary>
+/// Starts phone-based login for a customer.
+/// </summary>
+/// <param name="Phone">The customer phone number.</param>
 public sealed record LoginWithPhoneCommand(string Phone) : IRequest<Result<VerificationResponseDto>>;
+
+/// <summary>
+/// Completes phone-based login after OTP verification.
+/// </summary>
+/// <param name="VerificationId">The verification identifier.</param>
+/// <param name="RawOtp">The OTP code.</param>
+/// <param name="SessionType">The requested session type.</param>
+/// <param name="DeviceId">The optional device identifier.</param>
+/// <param name="IpAddress">The optional IP address.</param>
+/// <param name="UserAgent">The optional user agent.</param>
 public sealed record VerifyOtpLoginCommand(Guid VerificationId, string RawOtp, SessionType SessionType, Guid? DeviceId, string? IpAddress, string? UserAgent) : IRequest<Result<AuthResponseDto>>;
+
+/// <summary>
+/// Authenticates an administrator.
+/// </summary>
+/// <param name="Email">The admin email.</param>
+/// <param name="Password">The plaintext password.</param>
+/// <param name="IpAddress">The optional IP address.</param>
+/// <param name="UserAgent">The optional user agent.</param>
 public sealed record AdminLoginCommand(string Email, string Password, string? IpAddress, string? UserAgent) : IRequest<Result<AdminAuthResponseDto>>;
+
+/// <summary>
+/// Logs out a single session by raw session token.
+/// </summary>
+/// <param name="RawToken">The raw session token.</param>
 public sealed record LogoutCommand(string RawToken) : IRequest<Result>;
+
+/// <summary>
+/// Logs out all sessions for the current actor.
+/// </summary>
 public sealed record LogoutAllCommand() : IRequest<Result>;
+
+/// <summary>
+/// Refreshes a JWT using an existing session token.
+/// </summary>
+/// <param name="RawToken">The raw session token.</param>
 public sealed record RefreshTokenCommand(string RawToken) : IRequest<Result<string>>;
+
+/// <summary>
+/// Starts a password-reset flow for an email address.
+/// </summary>
+/// <param name="Email">The target email.</param>
 public sealed record SendPasswordResetCommand(string Email) : IRequest<Result>;
+
+/// <summary>
+/// Resets a password using a verification token.
+/// </summary>
+/// <param name="RawToken">The raw reset token.</param>
+/// <param name="NewPassword">The new plaintext password.</param>
 public sealed record ResetPasswordCommand(string RawToken, string NewPassword) : IRequest<Result>;
+
+/// <summary>
+/// Verifies an email address using a verification token.
+/// </summary>
+/// <param name="RawToken">The raw verification token.</param>
 public sealed record VerifyEmailCommand(string RawToken) : IRequest<Result>;
+
+/// <summary>
+/// Registers or updates a customer device.
+/// </summary>
+/// <param name="DeviceId">The external device identifier.</param>
+/// <param name="DeviceType">The device platform.</param>
+/// <param name="DeviceName">The optional device name.</param>
+/// <param name="FcmToken">The optional FCM token.</param>
 public sealed record RegisterDeviceCommand(string DeviceId, DeviceType DeviceType, string? DeviceName, string? FcmToken) : IRequest<Result>;
 
-public sealed class RegisterWithEmailCommandValidator : AbstractValidator<RegisterWithEmailCommand>
+internal sealed class RegisterWithEmailCommandValidator : AbstractValidator<RegisterWithEmailCommand>
 {
     public RegisterWithEmailCommandValidator()
     {
@@ -40,7 +131,7 @@ public sealed class RegisterWithEmailCommandValidator : AbstractValidator<Regist
     }
 }
 
-public sealed class RegisterWithPhoneCommandValidator : AbstractValidator<RegisterWithPhoneCommand>
+internal sealed class RegisterWithPhoneCommandValidator : AbstractValidator<RegisterWithPhoneCommand>
 {
     public RegisterWithPhoneCommandValidator()
     {
@@ -49,7 +140,7 @@ public sealed class RegisterWithPhoneCommandValidator : AbstractValidator<Regist
     }
 }
 
-public sealed class LoginWithEmailCommandValidator : AbstractValidator<LoginWithEmailCommand>
+internal sealed class LoginWithEmailCommandValidator : AbstractValidator<LoginWithEmailCommand>
 {
     public LoginWithEmailCommandValidator()
     {
@@ -58,12 +149,12 @@ public sealed class LoginWithEmailCommandValidator : AbstractValidator<LoginWith
     }
 }
 
-public sealed class LoginWithPhoneCommandValidator : AbstractValidator<LoginWithPhoneCommand>
+internal sealed class LoginWithPhoneCommandValidator : AbstractValidator<LoginWithPhoneCommand>
 {
     public LoginWithPhoneCommandValidator() => RuleFor(x => x.Phone).NotEmpty();
 }
 
-public sealed class AdminLoginCommandValidator : AbstractValidator<AdminLoginCommand>
+internal sealed class AdminLoginCommandValidator : AbstractValidator<AdminLoginCommand>
 {
     public AdminLoginCommandValidator()
     {
@@ -72,7 +163,7 @@ public sealed class AdminLoginCommandValidator : AbstractValidator<AdminLoginCom
     }
 }
 
-public sealed class RegisterWithEmailHandler(
+internal sealed class RegisterWithEmailHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,
@@ -118,7 +209,7 @@ public sealed class RegisterWithEmailHandler(
     }
 }
 
-public sealed class RegisterWithPhoneHandler(
+internal sealed class RegisterWithPhoneHandler(
     AppDbContext db,
     INotificationService notificationService) : IRequestHandler<RegisterWithPhoneCommand, Result<VerificationResponseDto>>
 {
@@ -160,7 +251,7 @@ public sealed class RegisterWithPhoneHandler(
     }
 }
 
-public sealed class VerifyPhoneRegistrationHandler(
+internal sealed class VerifyPhoneRegistrationHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService) : IRequestHandler<VerifyPhoneRegistrationCommand, Result<AuthResponseDto>>
@@ -197,7 +288,7 @@ public sealed class VerifyPhoneRegistrationHandler(
     }
 }
 
-public sealed class LoginWithEmailHandler(
+internal sealed class LoginWithEmailHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,
@@ -244,7 +335,7 @@ public sealed class LoginWithEmailHandler(
     }
 }
 
-public sealed class LoginWithPhoneHandler(
+internal sealed class LoginWithPhoneHandler(
     AppDbContext db,
     INotificationService notificationService) : IRequestHandler<LoginWithPhoneCommand, Result<VerificationResponseDto>>
 {
@@ -277,7 +368,7 @@ public sealed class LoginWithPhoneHandler(
     }
 }
 
-public sealed class VerifyOtpLoginHandler(
+internal sealed class VerifyOtpLoginHandler(
     AppDbContext db,
     IJwtService jwtService,
     ISessionStore sessionStore) : IRequestHandler<VerifyOtpLoginCommand, Result<AuthResponseDto>>
@@ -316,7 +407,7 @@ public sealed class VerifyOtpLoginHandler(
     }
 }
 
-public sealed class AdminLoginHandler(
+internal sealed class AdminLoginHandler(
     AppDbContext db,
     IPasswordService passwordService,
     IJwtService jwtService,

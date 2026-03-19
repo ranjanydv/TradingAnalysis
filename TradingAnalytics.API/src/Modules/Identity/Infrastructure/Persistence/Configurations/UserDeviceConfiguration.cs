@@ -9,7 +9,7 @@ namespace TradingAnalytics.Modules.Identity.Infrastructure.Persistence.Configura
 /// <summary>
 /// Configures the user device entity.
 /// </summary>
-public sealed class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevice>
+internal sealed class UserDeviceConfiguration : IEntityTypeConfiguration<UserDevice>
 {
     public void Configure(EntityTypeBuilder<UserDevice> builder)
     {

@@ -18,10 +18,16 @@ public sealed class AdminCustomersController(ISender sender) : AppControllerBase
 {
     private readonly ISender _sender = sender ?? throw new ArgumentNullException(nameof(sender));
 
+    /// <summary>
+    /// Creates a customer as an administrator.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create(AdminCreateCustomerCommand command, CancellationToken ct) =>
         CreatedResult(await _sender.Send(command, ct), "Customer created.");
 
+    /// <summary>
+    /// Bans a customer.
+    /// </summary>
     [HttpPost("{customerId:guid}/ban")]
     public async Task<IActionResult> Ban(Guid customerId, [FromBody] BanRequest request, CancellationToken ct)
     {
@@ -29,10 +35,16 @@ public sealed class AdminCustomersController(ISender sender) : AppControllerBase
         return result.IsFailure ? BadRequest(ApiResponse<object?>.Ok(result.Error!)) : OkMessage("Customer banned.");
     }
 
+    /// <summary>
+    /// Gets a customer by identifier.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct) =>
         OkResult(await _sender.Send(new GetCustomerByIdQuery(id), ct), "Customer retrieved.");
 
+    /// <summary>
+    /// Gets customers using cursor pagination.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] QueryParams queryParams, CancellationToken ct) =>
         CursoredResult(await _sender.Send(new GetAllCustomersQuery(queryParams), ct), "Customers retrieved.");
