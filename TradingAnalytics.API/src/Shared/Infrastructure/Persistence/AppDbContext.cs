@@ -2,6 +2,7 @@ using System.Reflection;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TradingAnalytics.Modules.Identity.Domain.Entities;
+using TradingAnalytics.Modules.Subscriptions.Domain.Entities;
 using TradingAnalytics.Shared.Kernel.Entities;
 
 namespace TradingAnalytics.Shared.Infrastructure.Persistence;
@@ -62,6 +63,31 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator medi
     /// Gets the role permissions set.
     /// </summary>
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    /// <summary>
+    /// Gets the access modules set.
+    /// </summary>
+    public DbSet<AccessModule> AccessModules => Set<AccessModule>();
+
+    /// <summary>
+    /// Gets the subscription tiers set.
+    /// </summary>
+    public DbSet<SubscriptionTier> SubscriptionTiers => Set<SubscriptionTier>();
+
+    /// <summary>
+    /// Gets the tier prices set.
+    /// </summary>
+    public DbSet<TierPrice> TierPrices => Set<TierPrice>();
+
+    /// <summary>
+    /// Gets the user subscriptions set.
+    /// </summary>
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+
+    /// <summary>
+    /// Gets the payments set.
+    /// </summary>
+    public DbSet<Payment> Payments => Set<Payment>();
 
     /// <summary>
     /// Configures the model for all infrastructure assemblies.

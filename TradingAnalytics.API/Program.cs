@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using TradingAnalytics.Modules.Identity;
+using TradingAnalytics.Modules.Subscriptions;
 using TradingAnalytics.Shared.Infrastructure;
 using TradingAnalytics.Shared.Infrastructure.Auth;
 using TradingAnalytics.Shared.Infrastructure.Http;
@@ -18,6 +19,7 @@ builder.Services
     .AddSwaggerWithJwt();
 
 builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddSubscriptionsModule(builder.Configuration);
 builder.Services.AddControllers();
 
 builder.Services.AddSignalR()

@@ -17,6 +17,7 @@ internal static class MongoIndexInitializer
         ArgumentNullException.ThrowIfNull(database);
 
         var notifications = database.GetCollection<NotificationDocument>("notifications");
+        await RecreateNotificationExternalRefIndexAsync(notifications).ConfigureAwait(false);
         await notifications.Indexes.CreateManyAsync(
         [
             new CreateIndexModel<NotificationDocument>(
@@ -29,9 +30,6 @@ internal static class MongoIndexInitializer
             new CreateIndexModel<NotificationDocument>(
                 Builders<NotificationDocument>.IndexKeys.Ascending(x => x.RecipientId).Ascending("statusBySurface.mobile_in_app.readAt").Descending(x => x.CreatedAt),
                 new CreateIndexOptions { Sparse = true }),
-            new CreateIndexModel<NotificationDocument>(
-                Builders<NotificationDocument>.IndexKeys.Ascending(x => x.ExternalRef),
-                new CreateIndexOptions { Unique = true, Sparse = true }),
             new CreateIndexModel<NotificationDocument>(
                 Builders<NotificationDocument>.IndexKeys.Ascending(x => x.ExpiresAt),
                 new CreateIndexOptions { ExpireAfter = TimeSpan.Zero })
@@ -65,5 +63,28 @@ internal static class MongoIndexInitializer
                 Builders<AuditLogDocument>.IndexKeys.Ascending(x => x.CreatedAt),
                 new CreateIndexOptions { ExpireAfter = TimeSpan.FromDays(90) })
         ]).ConfigureAwait(false);
+    }
+
+    private static async Task RecreateNotificationExternalRefIndexAsync(IMongoCollection<NotificationDocument> notifications)
+    {
+        const string indexName = "externalRef_1";
+
+        try
+        {
+            await notifications.Indexes.DropOneAsync(indexName).ConfigureAwait(false);
+        }
+        catch (MongoCommandException exception) when (exception.CodeName == "IndexNotFound")
+        {
+        }
+
+        await notifications.Indexes.CreateOneAsync(
+            new CreateIndexModel<NotificationDocument>(
+                Builders<NotificationDocument>.IndexKeys.Ascending(x => x.ExternalRef),
+                new CreateIndexOptions<NotificationDocument>
+                {
+                    Name = indexName,
+                    Unique = true,
+                    PartialFilterExpression = Builders<NotificationDocument>.Filter.Type(x => x.ExternalRef, global::MongoDB.Bson.BsonType.String)
+                })).ConfigureAwait(false);
     }
 }

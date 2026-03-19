@@ -19,7 +19,8 @@ public sealed class CurrentUserService(IHttpContextAccessor accessor) : ICurrent
     {
         get
         {
-            var value = User?.FindFirstValue(Constants.ClaimTypes.UserId);
+            var value = User?.FindFirstValue(Constants.ClaimTypes.UserId)
+                ?? User?.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(value, out var id) ? id : null;
         }
     }

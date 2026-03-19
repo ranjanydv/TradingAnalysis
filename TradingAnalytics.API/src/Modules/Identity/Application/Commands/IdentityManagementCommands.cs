@@ -136,13 +136,14 @@ internal sealed class RefreshTokenHandler(
     public async Task<Result<AuthTokensDto>> Handle(RefreshTokenCommand request, CancellationToken ct)
     {
         var incomingHash = RefreshTokenHasher.Hash(request.RawRefreshToken);
-        var customerSession = await db.CustomerSessions.FirstOrDefaultAsync(x => x.Id == request.SessionId && !x.IsExpired, ct);
+        var now = DateTime.UtcNow;
+        var customerSession = await db.CustomerSessions.FirstOrDefaultAsync(x => x.Id == request.SessionId && x.ExpiresAt > now, ct);
         if (customerSession is not null)
         {
             return await RefreshCustomerSessionAsync(customerSession, incomingHash, ct);
         }
 
-        var adminSession = await db.AdminSessions.FirstOrDefaultAsync(x => x.Id == request.SessionId && !x.IsExpired, ct);
+        var adminSession = await db.AdminSessions.FirstOrDefaultAsync(x => x.Id == request.SessionId && x.ExpiresAt > now, ct);
         if (adminSession is not null)
         {
             return await RefreshAdminSessionAsync(adminSession, incomingHash, ct);
