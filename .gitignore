@@ -4,4 +4,5 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .dotnet/*
+.dotnet-tools/*
 .idea
