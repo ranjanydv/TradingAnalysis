@@ -1,7 +1,29 @@
-﻿services:
+services:
   tradinganalytics.api:
     image: tradinganalytics.api
     build:
       context: .
       dockerfile: TradingAnalytics.API/Dockerfile
+    depends_on:
+      - mongodb
+      - redis
 
+  mongodb:
+    image: mongo:8
+    container_name: tradinganalytics-mongodb
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: tradinganalytics-redis
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongodb_data:
+  redis_data:
