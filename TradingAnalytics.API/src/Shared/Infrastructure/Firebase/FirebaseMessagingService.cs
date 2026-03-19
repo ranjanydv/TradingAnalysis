@@ -1,22 +1,39 @@
 using FirebaseAdmin.Messaging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TradingAnalytics.Modules.Identity.Domain.Entities;
+using TradingAnalytics.Shared.Infrastructure.Persistence;
 
 namespace TradingAnalytics.Shared.Infrastructure.Firebase;
 
 /// <summary>
 /// Implements Firebase push messaging.
 /// </summary>
-public sealed class FirebaseMessagingService(ILogger<FirebaseMessagingService> logger) : IFirebaseMessagingService
+public sealed class FirebaseMessagingService(
+    ILogger<FirebaseMessagingService> logger,
+    AppDbContext dbContext) : IFirebaseMessagingService
 {
     private readonly ILogger<FirebaseMessagingService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AppDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
     /// <inheritdoc />
     public async Task<string?> SendAsync(FcmMessage message, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(message);
-        _logger.LogDebug("FCM recipient lookup for {RecipientId} is deferred until device entities are introduced.", message.RecipientId);
-        await Task.CompletedTask.ConfigureAwait(false);
-        return null;
+
+        var tokens = await _dbContext.Set<UserDevice>()
+            .Where(device => device.CustomerId.ToString() == message.RecipientId && device.IsActive && device.FcmToken != null)
+            .Select(device => device.FcmToken!)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        if (tokens.Count == 0)
+        {
+            return null;
+        }
+
+        var failed = await SendMulticastAsync(tokens, message, ct).ConfigureAwait(false);
+        return failed.Count < tokens.Count ? "sent" : null;
     }
 
     /// <inheritdoc />

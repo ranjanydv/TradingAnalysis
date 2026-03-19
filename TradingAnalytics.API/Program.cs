@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using TradingAnalytics.Modules.Identity;
 using TradingAnalytics.Shared.Infrastructure;
 using TradingAnalytics.Shared.Infrastructure.Auth;
 using TradingAnalytics.Shared.Infrastructure.Http;
@@ -15,6 +16,7 @@ builder.Services
     .AddJwtAuthentication(builder.Configuration)
     .AddSwaggerWithJwt();
 
+builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddControllers();
 
 builder.Services.AddSignalR()

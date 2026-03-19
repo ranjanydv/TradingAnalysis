@@ -1,6 +1,7 @@
 using System.Reflection;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TradingAnalytics.Modules.Identity.Domain.Entities;
 using TradingAnalytics.Shared.Kernel.Entities;
 
 namespace TradingAnalytics.Shared.Infrastructure.Persistence;
@@ -11,6 +12,41 @@ namespace TradingAnalytics.Shared.Infrastructure.Persistence;
 public class AppDbContext(DbContextOptions<AppDbContext> options, IMediator mediator) : DbContext(options)
 {
     private readonly IMediator _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+
+    /// <summary>
+    /// Gets the customers set.
+    /// </summary>
+    public DbSet<Customer> Customers => Set<Customer>();
+
+    /// <summary>
+    /// Gets the admin users set.
+    /// </summary>
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+
+    /// <summary>
+    /// Gets the accounts set.
+    /// </summary>
+    public DbSet<Account> Accounts => Set<Account>();
+
+    /// <summary>
+    /// Gets the customer sessions set.
+    /// </summary>
+    public DbSet<CustomerSession> CustomerSessions => Set<CustomerSession>();
+
+    /// <summary>
+    /// Gets the admin sessions set.
+    /// </summary>
+    public DbSet<AdminSession> AdminSessions => Set<AdminSession>();
+
+    /// <summary>
+    /// Gets the user devices set.
+    /// </summary>
+    public DbSet<UserDevice> UserDevices => Set<UserDevice>();
+
+    /// <summary>
+    /// Gets the verifications set.
+    /// </summary>
+    public DbSet<Verification> Verifications => Set<Verification>();
 
     /// <summary>
     /// Configures the model for all infrastructure assemblies.
